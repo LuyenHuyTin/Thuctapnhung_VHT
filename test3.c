@@ -8,6 +8,7 @@
 // global
 long cycle;
 struct timespec now;
+struct timespec timecheck, timecheck2;
 
 
 //main of thread sample
@@ -26,7 +27,7 @@ void *currently_time(void *time)
 void *check_time(void *time)
 { 
       long x = (*(long*)time);
-      struct timespec timecheck;
+      // struct timespec timecheck;
       FILE *file;
       file = fopen("freq.txt","r");
       char buff[100];
@@ -71,15 +72,15 @@ void *save_time(void *time)
     fclose(fp);
 
     //convert to long 
-    char *eptr;
-    long old_nsec = 0;
-    long old_sec = 0;
-    old_sec = strtol(t_sec,&eptr,10);
-    old_nsec = strtol(t_nsec,&eptr,10);
+     char *tin;
+     long old_nsec = 0;
+     long old_sec = 0;
+     old_sec = strtol(t_sec,&tin,10);
+     old_nsec = strtol(t_nsec,&tin,10);
     
 
-      printf("old_value %ld. %ld\n", old_sec, old_nsec);
-      printf("new_value %ld. %ld\n", now.tv_sec, now.tv_nsec);
+    //   printf("old_value %ld. %ld\n",old_sec, old_nsec);
+    //   printf("new_value %ld. %ld\n", now.tv_sec, now.tv_nsec);
 
     //save time
     FILE *file;
@@ -101,28 +102,44 @@ void *save_time(void *time)
       }
     fprintf(file,"%ld.",now.tv_sec);
     fprintf(file,"%ld",now.tv_nsec);
-    fprintf(file1,"%ld.",interval_sec);
+    fprintf(file1,"%ld,",interval_sec);
     fprintf(file1,"%ld \n",interval_nsec);
     fclose(file);
      
     fclose(file1);
 }
 int main(){
+  FILE *file;
+      file = fopen("freq.txt","r");
+      char buff[100];
+      fgets(buff,sizeof(buff),file);
+      //convert from string to long
+      char *eptr;
+      long data;
+      data = strtol(buff,&eptr,10);
+     fclose(file);
     long j = 1;
-    long i = 40000000;
+    long i = data;
     int* ptr;
     pthread_t sample;
     pthread_t input;
     pthread_t logging;
-    
+   // pthread_mutex_init(&mutex, NULL);   
     while(1){
-      pthread_create(&input,NULL,check_time,&i);
+      
+        if(nanosleep(&timecheck , &timecheck2) < 0 )   
+      {
+        printf("Nano sleep system call failed \n");
+        return -1;
+      }
+      else{
+     pthread_create(&input,NULL,check_time,&i);
       pthread_create(&sample, NULL, currently_time,&j);
       pthread_create(&logging,NULL,save_time,&i);
       pthread_join(input,(void**)&ptr);
       pthread_join(logging,(void**)&ptr);
-      pthread_join(sample, (void**)&ptr);
-      sleep(1);
+      pthread_join(sample, (void**)&ptr);      
     }
+        }
    return 0;
 }
