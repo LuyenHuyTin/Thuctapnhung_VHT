@@ -72,15 +72,15 @@ void *save_time(void *time)
     fclose(fp);
 
     //convert to long 
-     char *tin;
+      char *str;
      long old_nsec = 0;
      long old_sec = 0;
-     old_sec = strtol(t_sec,&tin,10);
-     old_nsec = strtol(t_nsec,&tin,10);
+     old_sec = strtol(t_sec,&str,10);
+     old_nsec = strtol(t_nsec,&str,10);
     
 
-    //   printf("old_value %ld. %ld\n",old_sec, old_nsec);
-    //   printf("new_value %ld. %ld\n", now.tv_sec, now.tv_nsec);
+      //printf("old_value %ld\n",old_sec);
+      //printf("new_value %ld. %ld\n", now.tv_sec, now.tv_nsec);
 
     //save time
     FILE *file;
@@ -102,8 +102,11 @@ void *save_time(void *time)
       }
     fprintf(file,"%ld.",now.tv_sec);
     fprintf(file,"%ld",now.tv_nsec);
-    fprintf(file1,"%ld,",interval_sec);
-    fprintf(file1,"%ld \n",interval_nsec);
+    fprintf(file1,"%ld.",now.tv_sec);
+    fprintf(file1,"%ld  ",now.tv_nsec);
+    fprintf(file1,"%ld.",interval_sec);
+    fprintf(file1,"000%ld \n",interval_nsec);
+  //  printf("%ld\n", interval_nsec);
     fclose(file);
      
     fclose(file1);
@@ -138,7 +141,8 @@ int main(){
       pthread_create(&logging,NULL,save_time,&i);
       pthread_join(input,(void**)&ptr);
       pthread_join(logging,(void**)&ptr);
-      pthread_join(sample, (void**)&ptr);      
+      pthread_join(sample, (void**)&ptr);  
+      //sleep(1);    
     }
         }
    return 0;
