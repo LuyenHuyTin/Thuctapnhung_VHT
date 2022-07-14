@@ -8,24 +8,37 @@
 // global
 long cycle;
 struct timespec now;
-struct timespec timecheck, timecheck2;
+struct timespec timecheck, timecheck2, request;
 
 
 //main of thread sample
 void *currently_time(void *time)
 {  
+  clock_gettime(CLOCK_REALTIME, &request);
+  char buff[100];
+    while(1)
+    {
+        
+          //errExit("clock_gettime");
+          request.tv_nsec += 1000;
+          /* Sleep for 20 seconds from now */
+           clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &request, NULL);
 
-     char buff[100];
+
       clock_gettime(CLOCK_REALTIME,&now);
       // strftime(buff, sizeof buff, "%D %T", gmtime(&now.tv_sec));
       // printf("Current time: %s.%09ld \n", buff, now.tv_nsec);
       printf("%09ld.%09ld \n",now.tv_sec, now.tv_nsec);
+     
+    }
   return NULL;
 }
 
 //main of thread input
 void *check_time(void *time)
 { 
+  while(1)
+  {
       long x = (*(long*)time);
       // struct timespec timecheck;
       FILE *file;
@@ -55,10 +68,12 @@ void *check_time(void *time)
       } 
         return NULL;
 }
+}
 
 //main of thread logging
 void *save_time(void *time)
 {
+  while(1){
     FILE *fp;
     fp = fopen("time_and_interval.txt","r");
     char buff[100];
@@ -105,11 +120,12 @@ void *save_time(void *time)
     fprintf(file1,"%ld.",now.tv_sec);
     fprintf(file1,"%ld  ",now.tv_nsec);
     fprintf(file1,"%ld.",interval_sec);
-    fprintf(file1,"000%ld \n",interval_nsec);
+    fprintf(file1,"%ld \n",interval_nsec);
   //  printf("%ld\n", interval_nsec);
     fclose(file);
      
     fclose(file1);
+  }
 }
 int main(){
   FILE *file;
@@ -128,22 +144,22 @@ int main(){
     pthread_t input;
     pthread_t logging;
    // pthread_mutex_init(&mutex, NULL);   
-    while(1){
+  //  while(1){
       
-        if(nanosleep(&timecheck , &timecheck2) < 0 )   
-      {
-        printf("Nano sleep system call failed \n");
-        return -1;
-      }
-      else{
+  //       if(clock_nanosleep(&timecheck , &timecheck2) < 0 )   
+  //     {
+  //       printf("Nano sleep system call failed \n");
+  //       return -1;
+  //     }
+  //    else{
      pthread_create(&input,NULL,check_time,&i);
       pthread_create(&sample, NULL, currently_time,&j);
       pthread_create(&logging,NULL,save_time,&i);
       pthread_join(input,(void**)&ptr);
       pthread_join(logging,(void**)&ptr);
       pthread_join(sample, (void**)&ptr);  
-      //sleep(1);    
-    }
-        }
+  //     //sleep(1);    
+  //  }
+  //      }
    return 0;
 }
