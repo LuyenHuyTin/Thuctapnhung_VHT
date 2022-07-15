@@ -1,3 +1,5 @@
+
+
 #include<stdio.h>
 #include<stdint.h>
 #include<pthread.h>
@@ -28,7 +30,7 @@ void *currently_time(void *time)
       clock_gettime(CLOCK_REALTIME,&now);
       // strftime(buff, sizeof buff, "%D %T", gmtime(&now.tv_sec));
       // printf("Current time: %s.%09ld \n", buff, now.tv_nsec);
-      printf("%09ld.%09ld \n",now.tv_sec, now.tv_nsec);
+      //printf("%09ld.%09ld \n",now.tv_sec, now.tv_nsec);
      
     }
   return NULL;
@@ -117,28 +119,28 @@ void *save_time(void *time)
       }
     fprintf(file,"%ld.",now.tv_sec);
     fprintf(file,"%ld",now.tv_nsec);
-    fprintf(file1,"%ld.",now.tv_sec);
-    fprintf(file1,"%ld  ",now.tv_nsec);
-    fprintf(file1,"%ld.",interval_sec);
+    //fprintf(file1,"%ld.",now.tv_sec);
+    //fprintf(file1,"%ld  ",now.tv_nsec);
+    fprintf(file1,"%ld,000",interval_sec);
     fprintf(file1,"%ld \n",interval_nsec);
-  //  printf("%ld\n", interval_nsec);
+    printf("%ld\n", interval_nsec);
     fclose(file);
      
     fclose(file1);
   }
 }
 int main(){
-  FILE *file;
-      file = fopen("freq.txt","r");
-      char buff[100];
-      fgets(buff,sizeof(buff),file);
-      //convert from string to long
-      char *eptr;
-      long data;
-      data = strtol(buff,&eptr,10);
-     fclose(file);
+  // FILE *file;
+  //     file = fopen("freq.txt","r");
+  //     char buff[100];
+  //     fgets(buff,sizeof(buff),file);
+  //     //convert from string to long
+  //     char *eptr;
+  //     long data;
+  //     data = strtol(buff,&eptr,10);
+  //    fclose(file);
     long j = 1;
-    long i = data;
+    long i = request.tv_nsec ;
     int* ptr;
     pthread_t sample;
     pthread_t input;
