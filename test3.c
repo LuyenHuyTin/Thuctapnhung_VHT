@@ -1,5 +1,3 @@
-
-
 #include<stdio.h>
 #include<stdint.h>
 #include<pthread.h>
@@ -11,8 +9,9 @@
 long cycle;
 struct timespec now;
 struct timespec timecheck, timecheck2, request;
-
-
+long freq = 100000;
+u_int8_t check_loop = 1;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;  
 //main of thread sample
 void *currently_time(void *time)
 {  
@@ -20,31 +19,47 @@ void *currently_time(void *time)
   char buff[100];
     while(1)
     {
-        
-          //errExit("clock_gettime");
-          request.tv_nsec += 1000;
-          /* Sleep for 20 seconds from now */
-           clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &request, NULL);
-
-
-      clock_gettime(CLOCK_REALTIME,&now);
-      // strftime(buff, sizeof buff, "%D %T", gmtime(&now.tv_sec));
-      // printf("Current time: %s.%09ld \n", buff, now.tv_nsec);
-      //printf("%09ld.%09ld \n",now.tv_sec, now.tv_nsec);
-     
-    }
-  return NULL;
+        clock_gettime(CLOCK_REALTIME,&now);  
+        if(request.tv_nsec + freq > 1000000000)
+        {
+         long temp = request.tv_nsec;
+          request.tv_sec +=1;
+          request.tv_nsec =   temp  + freq - 1000000000; 
+                 if(clock_nanosleep(CLOCK_REALTIME,TIMER_ABSTIME, &request,NULL) != 0)
+                  {
+                      check_loop = 0;
+                  }
+                  else
+                  {
+                      check_loop = 1;
+                  }
+       }
+        else{
+            request.tv_nsec +=freq;
+            if(clock_nanosleep(CLOCK_REALTIME,TIMER_ABSTIME, &request,NULL) != 0)
+              {
+                  check_loop = 0;
+              }
+            else
+              {
+                  check_loop = 1;
+              }
+        }
+  }
+      return NULL;
 }
+
 
 //main of thread input
 void *check_time(void *time)
 { 
   while(1)
   {
+      pthread_mutex_lock(&mutex);
       long x = (*(long*)time);
       // struct timespec timecheck;
       FILE *file;
-      file = fopen("freq.txt","r");
+      file = fopen("freq1.txt","r");
       char buff[100];
       fgets(buff,sizeof(buff),file);
       //convert from string to long
@@ -58,15 +73,17 @@ void *check_time(void *time)
     if(checktime != x) //check parameters
     {
       FILE *file;
-        file = fopen("freq.txt","w");
+        file = fopen("freq1.txt","w");
         fprintf(file,"%ld",x);
         fclose(file);
         cycle = x;
         timecheck.tv_nsec = data; // attach
+        pthread_mutex_unlock(&mutex);
     }
       else
       {
         return NULL;
+        pthread_mutex_unlock(&mutex);
       } 
         return NULL;
 }
@@ -77,7 +94,7 @@ void *save_time(void *time)
 {
   while(1){
     FILE *fp;
-    fp = fopen("time_and_interval.txt","r");
+    fp = fopen("kaka.txt","r");
     char buff[100];
     fgets(buff,sizeof(buff),fp);
     char *t_nsec;
@@ -103,7 +120,7 @@ void *save_time(void *time)
     FILE *file;
     FILE *file1;
     file1 = fopen("save_value.txt","a+"); // save all of offset values in file
-    file = fopen("time_and_interval.txt","w+");
+    file = fopen("kaka.txt","w+");
    
     long interval_sec = ((long)now.tv_sec) - old_sec ;
     long interval_nsec;
@@ -114,7 +131,7 @@ void *save_time(void *time)
       }
     else 
       {
-        interval_nsec = old_nsec - now.tv_nsec;
+        interval_nsec = 1000000000 + now.tv_nsec - old_nsec;
         interval_sec = interval_sec - 1;
       }
     fprintf(file,"%ld.",now.tv_sec);
@@ -125,22 +142,24 @@ void *save_time(void *time)
     fprintf(file1,"%ld \n",interval_nsec);
     printf("%ld\n", interval_nsec);
     fclose(file);
-     
     fclose(file1);
+   // sleep(1);
   }
 }
 int main(){
-  // FILE *file;
-  //     file = fopen("freq.txt","r");
-  //     char buff[100];
-  //     fgets(buff,sizeof(buff),file);
-  //     //convert from string to long
-  //     char *eptr;
-  //     long data;
-  //     data = strtol(buff,&eptr,10);
-  //    fclose(file);
+  FILE *file;
+      file = fopen("freq1.txt","r");
+      char buff[100];
+      fgets(buff,sizeof(buff),file);
+      //convert from string to long
+      char *eptr;
+      long data;
+      data = strtol(buff,&eptr,10);
+     fclose(file);
     long j = 1;
-    long i = request.tv_nsec ;
+    
+    long i = data;
+    //printf("%ld", i);
     int* ptr;
     pthread_t sample;
     pthread_t input;
@@ -154,8 +173,8 @@ int main(){
   //       return -1;
   //     }
   //    else{
-     pthread_create(&input,NULL,check_time,&i);
-      pthread_create(&sample, NULL, currently_time,&j);
+      pthread_create(&input,NULL,check_time,&i);
+      pthread_create(&sample, NULL, currently_time,&i);
       pthread_create(&logging,NULL,save_time,&i);
       pthread_join(input,(void**)&ptr);
       pthread_join(logging,(void**)&ptr);
